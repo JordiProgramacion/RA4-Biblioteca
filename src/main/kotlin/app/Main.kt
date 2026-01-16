@@ -25,69 +25,95 @@ fun registrarLlibre(biblioteca: Biblioteca) {
     val titol = readln().replaceFirstChar { it.uppercase() }
     print("Autor: ")
     val autor = readln().replaceFirstChar { it.uppercase() }
-    val llibre = Llibre(titol, autor)
+    print("Escriu qualsevol cosa per generar l'ISBN: ")
+    val paraula = readln()
+    val codi = generarCodi(paraula)
+    biblioteca.cataleg.forEach {
+        if (it.isbn == codi) {
+            println("Introdueix un altra paraula, aquest ISBN ja existeix (quant més gran sigui el text més probable de que no es repeteixi.)")
+            return
+        }
+    }
+    val llibre = Llibre(titol = titol, autor = autor, isbn = codi)
     biblioteca.afegirLlibre(llibre)
+    println("Llibre afegit correctament.")
 }
 fun registrarLector(biblioteca: Biblioteca) {
     print("Nom: ")
     val nom = readln().replaceFirstChar { it.uppercase() }
-    val lector = Lector(nom)
+    print("Introdueix un id (mètode per identificarse al sistema): ")
+    val id = readln()
+    biblioteca.lectors.forEach {
+        if (it.id == id) {
+            print("Aquest id ja existeix, torna a intentar-ho.")
+            return
+        }
+    }
+    val lector = Lector(nom = nom, id = id)
     biblioteca.registrarLector(lector)
 }
 fun prestarLlibre(biblioteca: Biblioteca) {
     biblioteca.llistarDisponibles()
-    print("Quin llibre et vols emportar: ")
-    val titol = readln().replaceFirstChar { it.uppercase() }
-    val llibre = biblioteca.cataleg.find { it.equals(titol) }
-    if (llibre == null) {
-        println("El llibre no es al catàleg.")
+    print("ISBN: ")
+    val isbn = readln().toLongOrNull()
+    if (isbn == null) {
+        println("Això no es un isbn.")
         return
     }
-    if (llibre.prestat) {
-        println("El llibre està prestat.")
+    val isbnReal = biblioteca.cataleg.find { it.isbn == (isbn) }
+    if (isbnReal == null) {
+        println("No existeix ningun llibre amb aquest isbn.")
         return
     }
-    print("Nom del lector: ")
-    val nom = readln().replaceFirstChar { it.uppercase() }
-    val lector = biblioteca.lectors.find { it.equals(nom) }
-    if (lector == null) {
-        println("$nom no es un lector de la biblioteca.")
+    if (isbnReal.prestat) {
+        println("Aquest llibre ja esta prestat en aquests moments.")
         return
     }
-    lector.prestarLlibre(llibre)
+    print("Id del lector: ")
+    val id = readln()
+    val idReal = biblioteca.lectors.find { it.id == id }
+    if (idReal == null) {
+        println("Aquest id no es de ningun dels nostres lectors, si t'has oblidat del teu id vina a la secretaria de la biblioteca.")
+        return
+    }
+    idReal.prestarLlibre(isbnReal)
     println("Llibre prestat correctament.")
 }
 fun retornarLlibre(biblioteca: Biblioteca) {
-    println("Nom del lector: ")
-    val nom = readln().replaceFirstChar { it.uppercase() }
-    val nomLector = biblioteca.lectors.find { it.equals(nom) }
-    if (nomLector == null) {
-        println("$nom no es un lector de la biblioteca.")
+    print("Id del lector: ")
+    val id = readln()
+    val idLector = biblioteca.lectors.find { it.id == id }
+    if (idLector == null) {
+        println("$idLector no es un id de lector de la biblioteca.")
         return
     }
-    if (nomLector.llibresPrestats.isEmpty()) {
-        println("$nomLector no té llibres prestats.")
+    if (idLector.llibresPrestats.isEmpty()) {
+        println("$idLector no té llibres prestats.")
         return
     }
-    println("$nomLector té un total de ${Utils.comptarPrestats(nomLector.llibresPrestats)}")
-    nomLector.llistarPrestecs()
-    println("Títol del llibre: ")
-    val titol = readln()
-    val llibre = biblioteca.cataleg.find { it.titol == titol }
-    if (llibre == null) {
-        println("El llibre no existeix.")
+    println("${idLector.nom} té un total de ${Utils.comptarPrestats(idLector.llibresPrestats)} llibres prestats.")
+    idLector.llistarPrestecs()
+    print("ISBN del llibre: ")
+    val titol = readln().toLongOrNull()
+    if (titol == null) {
+        println("No has introduït un isbn.")
         return
     }
-    if (!llibre.prestat) {
+    val isbnLlibre = biblioteca.cataleg.find { it.isbn == titol }
+    if (isbnLlibre == null) {
+        println("El ISBN es d'un llibre que no existeix.")
+        return
+    }
+    if (!isbnLlibre.prestat) {
         println("El llibre no esta prestat.")
         return
     }
-    llibre.retornar()
-    println(llibre.info())
+    idLector.retornarLlibre(isbnLlibre)
+    println(isbnLlibre.info())
     println("Llibre retornat correctament.")
 }
 fun cercarLlibresPerAutor(biblioteca: Biblioteca) {
-    println("Nom de l'autor: ")
+    print("Nom de l'autor: ")
     val nom = readln().replaceFirstChar { it.uppercase() }
     val autor = biblioteca.cataleg.find { it.autor == (nom) }
     if (autor == null) {
@@ -95,9 +121,14 @@ fun cercarLlibresPerAutor(biblioteca: Biblioteca) {
         return
     }
     val llistaLlibres = biblioteca.cercarPerAutor(nom)
-    println("$nom te un total de: ${Utils.comptarPerAutor(biblioteca.cataleg, nom)} llibres en aquesta biblioteca.")
-    println(llistaLlibres)
+    println("$nom te un total de: ${Utils.comptarPerAutor(biblioteca.cataleg, nom)} llibre/s en aquesta biblioteca.")
+    llistaLlibres.forEach { println(it.titol) }
 }
+fun generarCodi(palabra: String): Long {
+    //val codigo = palabra.map {it.code}.joinToString("").toLong() Esto genera números muy grandes.
+    val codigo = palabra.map {it.code}.sum().toLong()
+    return codigo
+} //
 fun main() {
     val bibliotecaOlesa = Biblioteca()
     do {
