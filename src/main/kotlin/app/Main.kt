@@ -3,6 +3,7 @@ package app
 import models.Llibre
 import models.Lector
 import core.Biblioteca
+import core.Persistencia
 import utils.Utils
 
 fun menu() {
@@ -128,9 +129,9 @@ fun generarCodi(palabra: String): Long {
     //val codigo = palabra.map {it.code}.joinToString("").toLong() Esto genera números muy grandes.
     val codigo = palabra.map {it.code}.sum().toLong()
     return codigo
-} //
+}
 fun main() {
-    val bibliotecaOlesa = Biblioteca()
+    val bibliotecaOlesa = Persistencia.carregar()
     do {
         menu()
         print("\nQuina acció vols fer: ")
@@ -142,7 +143,11 @@ fun main() {
             4 -> retornarLlibre(bibliotecaOlesa)
             5 -> bibliotecaOlesa.llistarDisponibles()
             6 -> cercarLlibresPerAutor(bibliotecaOlesa)
-            0 -> println("Sortint de l'aplicació...")
+            0 -> {
+                Persistencia.guardar(bibliotecaOlesa)
+                println("Sortint de l'aplicació...")
+                Thread.sleep(2000)
+            }
             else -> println("Opció no valida.")
          }
     } while (opcio != 0)
