@@ -5,12 +5,6 @@
       "titol": "Harry Potter",
       "autor": "J.K.Rowling",
       "prestat": false
-    },
-    {
-      "isbn": 688,
-      "titol": "Prueba1",
-      "autor": "Prueba1",
-      "prestat": true
     }
   ],
   "lectors": [

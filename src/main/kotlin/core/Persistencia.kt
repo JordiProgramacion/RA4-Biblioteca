@@ -87,14 +87,15 @@ object Persistencia {
                         nom = lectorMap["nom"] as String
                     )
 
-                    // Recuperar los ISBN de libros prestados
-                    val llibresPrestatIds = lectorMap["llibresPrestatIds"] as? List<Double>
+                    // Vemos los IBSN que son prestados
+                    val llibresPrestatIds = lectorMap["llibresPrestatsLong"] as? List<Double>
 
-                    // Buscar cada libro en el catálogo y añadirlo a la lista del lector
                     llibresPrestatIds?.forEach { isbnDouble ->
                         val isbn = isbnDouble.toLong()
                         val llibre = llista.cataleg.find { it.isbn == isbn }
-                        llibre?.let { lector.llibresPrestats.add(it) }
+                        llibre?.let {
+                            it.prestat = true
+                            lector.llibresPrestats.add(it) }
                     }
 
                     llista.lectors.add(lector)
