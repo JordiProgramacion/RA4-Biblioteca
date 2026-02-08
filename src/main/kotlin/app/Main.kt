@@ -144,9 +144,8 @@ fun main() {
             5 -> bibliotecaOlesa.llistarDisponibles()
             6 -> cercarLlibresPerAutor(bibliotecaOlesa)
             0 -> {
-                Persistencia.guardar(bibliotecaOlesa)
+                Persistencia.desarJSON(bibliotecaOlesa)
                 println("Sortint de l'aplicació...")
-                Thread.sleep(2000)
             }
             else -> println("Opció no valida.")
          }
