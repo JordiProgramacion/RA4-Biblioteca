@@ -1,0 +1,30 @@
+{
+  "llistaLlibres": [
+    {
+      "isbn": 420,
+      "titol": "Harry Potter",
+      "autor": "J.K.Rowling"
+    },
+    {
+      "isbn": 723,
+      "titol": "Hola",
+      "autor": "Hola"
+    }
+  ],
+  "llistaLectors": [
+    {
+      "id": "01",
+      "nom": "Jordi"
+    },
+    {
+      "id": "02",
+      "nom": "Igor"
+    }
+  ],
+  "llistaPresetcs": [
+    {
+      "id": "01",
+      "ISBN": 420
+    }
+  ]
+}

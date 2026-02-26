@@ -3,122 +3,68 @@ package core
 import models.Lector
 import models.Llibre
 import core.Biblioteca
-
+import dto.BibliotecaDTO
+import dto.LectorDTO
+import dto.LlibreDTO
+import dto.PrestecsDTO
     // Persistencia
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import dto.LectorDTO
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 
-// import java.io.File // Llibreria per persistencia antigua.
-
 object Persistencia {
 
-    private val convertiroJson: Gson = GsonBuilder().setPrettyPrinting().create()
-    private const val PERSISTENCIA_BIBLIOTECA = "persistencia.json"
-
-    fun desarJSON(biblioteca: Biblioteca) {
-
-        try {
-            val file = File(PERSISTENCIA_BIBLIOTECA)
-
-            FileWriter(file).use { escribir ->
-                val lectorsData = biblioteca.lectors.map { lector ->
-                    LectorDTO(
-                        id = lector.id,
-                        nom = lector.nom,
-                        llibresPrestatsLong = lector.llibresPrestats.map { it.isbn }
-                    )
-                }
-                val dades = mapOf(
-                    "cataleg" to biblioteca.cataleg,
-                    "lectors" to lectorsData
-                )
-                convertiroJson.toJson(dades, escribir)
-            }
-            println("S'han guardat totes les dades correctament.")
-        } catch (e: Exception) {
-            println("No s'han guardat correctament les dades: ${e.message}")
-            // Esto es importante para saber que ha pasado, por qué y en que archivo
-            e.printStackTrace()
-        }
-
-    }
+    val FILE_NAME = "persitencia.json"
 
     fun carregar(): Biblioteca {
-        val llista = Biblioteca()
-        val file = File(PERSISTENCIA_BIBLIOTECA)
 
-        // Control de errores por si no existe el archivo
-        if (!file.exists()) {
-            return llista
+        val file = File(FILE_NAME)
+        val gson = Gson()
+        val dto = gson.fromJson(file.readText(), BibliotecaDTO::class.java)
+        val biblioteca = Biblioteca()
+
+        dto.llistaLectors.forEach { lectorDTO ->
+            biblioteca.registrarLector(Lector(lectorDTO.id, lectorDTO.nom))
         }
-
-        try {
-            FileReader(file).use { reader ->
-                val tipus = object : TypeToken<Map<String, Any>>() {}.type
-                val dades: Map<String, Any> = convertiroJson.fromJson(reader, tipus)
-
-                // Cargamos el catálogo general donde no estan los prestamos
-                val catalogType = object : TypeToken<List<Map<String, Any>>>() {}.type
-                val catalogJson = convertiroJson.toJson(dades["cataleg"])
-                val catalogList: List<Map<String, Any>> = convertiroJson.fromJson(catalogJson, catalogType)
-
-                catalogList.forEach { llibreMap ->
-                    val llibre = Llibre(
-                        isbn = (llibreMap["isbn"] as Double).toLong(),
-                        titol = llibreMap["titol"] as String,
-                        autor = llibreMap["autor"] as String,
-                        prestat = llibreMap["prestat"] as Boolean
-                    )
-                    llista.cataleg.add(llibre)
-                }
-
-                // Ahora tenemos que añadir a cada lector sus respectivos prestamos
-                val lectorsJson = convertiroJson.toJson(dades["lectors"])
-                val lectorsList: List<Map<String, Any>> = convertiroJson.fromJson(lectorsJson, catalogType)
-
-                lectorsList.forEach { lectorMap ->
-                    val lector = Lector(
-                        id = lectorMap["id"] as String,
-                        nom = lectorMap["nom"] as String
-                    )
-
-                    // Vemos los IBSN que son prestados
-                    val llibresPrestatIds = lectorMap["llibresPrestatsLong"] as? List<Double>
-
-                    llibresPrestatIds?.forEach { isbnDouble ->
-                        val isbn = isbnDouble.toLong()
-                        val llibre = llista.cataleg.find { it.isbn == isbn }
-                        llibre?.let {
-                            it.prestat = true
-                            lector.llibresPrestats.add(it) }
+        dto.llistaLlibres.forEach { llibreDTO ->
+            biblioteca.afegirLlibre(Llibre(llibreDTO.isbn, llibreDTO.titol, llibreDTO.autor))
+        }
+        dto.llistaPresetcs.forEach { prestecsDTO ->
+            biblioteca.lectors.forEach { lector ->
+                if (lector.id == prestecsDTO.id) {
+                    biblioteca.cataleg.forEach { llibre ->
+                        if (llibre.isbn == prestecsDTO.ISBN){
+                            lector.prestarLlibre(llibre)
+                        }
                     }
-
-                    llista.lectors.add(lector)
                 }
             }
-
-        } catch (e: Exception) {
-            println("Error al carregar les dades: ${e.message}")
-            e.printStackTrace()
         }
-
-        return llista
+        return biblioteca
     }
-// TODO
-    /* DTO para archivos donde se guarden datos (los modelos)
-    *  Los DTO son data class
-    *  Import la libreria gson y guardarlo en un archivo json (la biblioteca)
-    *  */
+    fun desarJSON(biblioteca: Biblioteca) {
+
+        val llistaLlibresDTO: MutableList<LlibreDTO> = mutableListOf()
+        val llistaLectorsDTO: MutableList<LectorDTO> = mutableListOf()
+        val llistaPrestecsDTO: MutableList<PrestecsDTO> = mutableListOf()
+        val gson = GsonBuilder().setPrettyPrinting().create()
+
+        biblioteca.cataleg.forEach { llibreDTO ->
+            llistaLlibresDTO.add(LlibreDTO(llibreDTO.isbn, llibreDTO.titol, llibreDTO.autor))
+        }
+        biblioteca.lectors.forEach { lectorDTO ->
+            llistaLectorsDTO.add(LectorDTO(lectorDTO.id, lectorDTO.nom))
+            lectorDTO.llibresPrestats.forEach { prestecDTO ->
+                llistaPrestecsDTO.add(PrestecsDTO(lectorDTO.id, prestecDTO.isbn))
+            }
+        }
+        val bibliotecaDTO = BibliotecaDTO(llistaLlibresDTO, llistaLectorsDTO, llistaPrestecsDTO)
+        File(FILE_NAME).writeText(gson.toJson(bibliotecaDTO))
+    }
 }
-
-
-
-
 /* ---- Model de persistencia antic ----
     private const val FILE_NAME = "guardar.txt"
 

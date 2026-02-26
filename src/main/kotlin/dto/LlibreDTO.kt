@@ -1,8 +1,7 @@
 package dto
 
 data class LlibreDTO(
-    val isbn: String,
+    val isbn: Long,
     val titol: String,
-    val autor: String,
-    var estado: Boolean) {
+    val autor: String) {
 }
